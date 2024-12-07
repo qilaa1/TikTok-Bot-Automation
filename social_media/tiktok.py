@@ -1,13 +1,17 @@
 import time
-import json
-import random
 import os
 from selenium.webdriver.common.by import By
+from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.chrome.options import Options
+from webdriver_manager.chrome import ChromeDriverManager
+from selenium import webdriver
+import pickle
 
-class tiktok_bot:
+class TikTokBot:
+    
     def __init__(self, driver):
         self.driver = driver
 
@@ -35,22 +39,33 @@ class tiktok_bot:
                 time.sleep(0.05)
             element.send_keys(Keys.ENTER)
         except Exception as e:
-            print(f"Error typing text: {e}")
-    
+            print(f"Error commenting: {e}")
 
 def save_cookies(cookies, filename):
-    with open(filename, 'w') as file:
-        json.dump(cookies, file)
+    """Save cookies to a file using pickle."""
+    try:
+        with open(filename, 'wb') as file:
+            pickle.dump(cookies, file)
+        print(f"Cookies saved successfully to {filename}.")
+    except Exception as e:
+        print(f"Error saving cookies: {e}")
 
 def load_cookies(filename):
+    """Load cookies from a file using pickle."""
     try:
-        with open(filename, 'r') as file:
-            return json.load(file)
-    except FileNotFoundError:
+        if os.path.exists(filename) and os.path.getsize(filename) > 0:
+            with open(filename, 'rb') as file:
+                return pickle.load(file)
+        else:
+            print(f"No valid cookie file found: {filename}")
+            return None
+    except Exception as e:
+        print(f"Error loading cookies: {e}")
         return None
 
-def login(driver, email, password, cookies):
-    bot = tiktok_bot(driver)
+def login(driver, email, password, cookies=None):
+    """Login to TikTok using either cookies or manual login."""
+    bot = TikTokBot(driver)
     
     # Navigate to TikTok homepage
     driver.get("https://www.tiktok.com")
@@ -60,139 +75,149 @@ def login(driver, email, password, cookies):
         # Load cookies into the browser
         for cookie in cookies:
             driver.add_cookie(cookie)
-
         print("Cookies loaded. Skipping login...")
-
-        # Log the action to a report file
-        with open("report.txt", "a") as file:
-            file.write("Logged in using cookies.\n")
-
-        return  # Exit the function after successful login via cookies
+        driver.refresh()  # Refresh the page to apply cookies
+        
+        # Wait for the page to reload and check for a successful login
+        try:
+            WebDriverWait(driver, 10).until(
+                EC.presence_of_element_located((By.XPATH, '//div[@class="user-info"]'))  # Element only visible after login
+            )
+            print("Cookies loaded and login successful!")
+            return  # Skip manual login if cookies are valid and login is successful
+        except Exception as e:
+            print(f"Error after loading cookies: {e}")
+            print("Login failed or cookies invalid, proceed with manual login.")
+            input("Type 'ok' after you've manually logged in: ")
 
     # No cookies found, proceed with manual login
     driver.get('https://www.tiktok.com/login/phone-or-email/email')
 
-    # Input email and password using the bot
+    # Ensure the login page is loaded
+    WebDriverWait(driver, 10).until(
+        EC.presence_of_element_located((By.XPATH, '//input[@type="text"]'))
+    )
+
+    # Type email and password
     bot.type_text('//input[@type="text"]', email)
     time.sleep(1)
     bot.type_text('//input[@type="password"]', password)
     time.sleep(1)
 
-    start_url = driver.current_url
-
     # Submit login form
     bot.click('//button[@type="submit"]')
-    time.sleep(10)
+    time.sleep(5)
 
-    # Check if login failed by comparing URLs
-    if driver.current_url == start_url:
-        print("Automatic login failed. Please log in manually and then type 'ok' to continue.")
-        confirm = input("Type 'ok' after you've manually logged in: ")
+    # Wait for login to complete (look for an element that is only visible after login)
+    try:
+        WebDriverWait(driver, 20).until(
+            EC.presence_of_element_located((By.XPATH, '//div[@class="user-info"]'))  # Modify with actual element after login
+        )
+        print("Login successful!")
+    except Exception as e:
+        print("Automatic login failed. Please log in manually.")
+        input("Type 'ok' after you've manually logged in: ")
 
-    # Get cookies after manual login
+    # Save cookies after manual login
     cookies = driver.get_cookies()
-
-    # Save cookies to a file
-    save_cookies(cookies, 'tiktok_cookies.txt')
-    
+    save_cookies(cookies, 'tiktok_cookies.pkl')
     print("Login successful. Credentials saved for future sessions.")
 
+def get_video_and_comment(driver, video_url, keyword_list=["harga", "produk", "diskon", "cara beli"]):
+    """Get a video from the URL and post a reply to comments based on keywords."""
+    # Go to the provided video URL
+    driver.get(video_url)
+    print(f"Video URL opened: {video_url}")
 
-def comment_user_video(driver, user, comments, n):
-    """
-    Posts a number of comments on a user's latest TikTok video, accounting for pinned videos.
+    # Wait for the comment section button to appear
+    WebDriverWait(driver, 20).until(
+        EC.presence_of_element_located((By.XPATH, "//div[@role='button' and contains(text(), 'Comment')]"))
+    )
     
-    :param driver: Selenium WebDriver instance controlling the browser.
-    :param user: TikTok username whose video you want to comment on.
-    :param comments: List of comments to randomly choose from.
-    :param n: Number of comments to post.
-    """
+    # Scroll to ensure comments are loaded
+    driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+    time.sleep(2)  # Wait for page to load
 
-    # Navigate to the user's TikTok profile
-    driver.get(f"https://www.tiktok.com/@{user}")
+    # Click to open the comments
+    comment_button_xpath = "//div[@role='button' and contains(text(), 'Comment')]"  # Adjust as needed
+    comment_button = driver.find_element(By.XPATH, comment_button_xpath)
+    comment_button.click()
+    time.sleep(5)  # Wait for the comment section to load
 
-    # Count the number of pinned videos on the user's profile
-    pinned_video_count = len(driver.find_elements(By.XPATH, '//div[@data-e2e="video-card-badge"]'))
+    # Get all the comments
+    comments_elements = driver.find_elements(By.XPATH, '//div[@role="comment"]')
 
-    # Wait for the user profile to fully load
-    WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.XPATH, '//div[@data-e2e="user-post-item"]')))
+    # Print the number of comments found
+    print(f"Found {len(comments_elements)} comments.")
 
-    bot = tiktok_bot(driver)
+    if not comments_elements:
+        print("No comments found.")
+        return
 
-    # Click on the user's first video
-    bot.click('//div[@data-e2e="user-post-item"]')
-    
-    # If pinned videos exist, navigate through them
-    if pinned_video_count > 0:
-        for _ in range(pinned_video_count):
-            bot.click('//button[@data-e2e="arrow-right"]')  # Click to skip pinned videos
-
-    # Loop to post multiple comments
-    for i in range(n):
-        comment = random.choice(comments)
-
-        # Wait for the comment input box to be present
-        WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.XPATH, '//div[@role="textbox"]')))
-
+    for comment_element in comments_elements:
         try:
-            # Post the comment
-            bot.comment('//div[@role="textbox"]', comment)
+            comment_text = comment_element.find_element(By.XPATH, './/p').text.lower()
+            username = comment_element.find_element(By.XPATH, './/a').text.strip()
 
-            print(f"Successfully posted comment on {user}'s latest video.")
+            print(f"Found comment by @{username}: {comment_text}")
+
+            # Check if the comment contains any of the keywords
+            if any(keyword in comment_text for keyword in keyword_list):
+                # Reply to the comment
+
+                # Find and click the reply button
+                reply_button = comment_element.find_element(By.XPATH, './/button[contains(@class, "reply-button-class")]')  # Adjust class
+                reply_button.click()
+
+                time.sleep(1)  # Wait for the reply box to appear
+
+                # Find the reply textbox
+                response_box = driver.find_element(By.XPATH, '//div[@role="textbox"]')
+                response_box.click()
+
+                # Wait for the reply textbox to be clickable
+                WebDriverWait(driver, 10).until(
+                    EC.element_to_be_clickable((By.XPATH, '//div[@role="textbox"]'))
+                )
+
+                # Type the reply
+                response = f"@{username} Terima kasih atas komentarnya! {comment_text}"
+                response_box.send_keys(response)
+                response_box.send_keys(Keys.RETURN)  # Send the reply
+
+                print(f"Replied to @{username} with: {response}")
+                time.sleep(2)
 
         except Exception as e:
-            print(f"Error while commenting...")
+            print(f"Error while processing comment: {e}")
 
-        # Wait for the 'Send' button to be clickable, then click to submit the comment
-        WebDriverWait(driver, 10).until(EC.element_to_be_clickable((By.XPATH, '//button[@data-e2e="arrow-right"]')))
-        bot.click('//button[@data-e2e="arrow-right"]')
+def run_bot():
+    """Main bot function that handles login, posting comments, following users, etc."""
+    email = "yiyayuuu"  # Replace with your TikTok email
+    password = "FUCKITLIFE1."  # Replace with your TikTok password
 
-    print(f"Successfully posted {n} comments on {user}'s video.")
+    # Load cookies for login
+    cookies = load_cookies('tiktok_cookies.pkl')
 
-def follow(driver, user):
-    driver.get("https://www.tiktok.com/@" + user)
+    # Initialize WebDriver
+    options = Options()
+    options.add_argument("--start-maximized")
+    driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
+    driver.maximize_window()
 
-    WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.XPATH, '//button[@data-e2e="follow-button"]')))
+    # Login with cookies or manually
+    login(driver, email, password, cookies)
 
-    bot = tiktok_bot(driver)
+    # Set the video URL
+    video_url = "https://www.tiktok.com/@yiyayuuu/video/7402587657584315653"  # Replace with the actual video URL
 
-    bot.click('//button[@data-e2e="follow-button"]')
+    try:
+        get_video_and_comment(driver, video_url)
+    except Exception as e:
+        print(f"Error: {e}")
+    finally:
+        driver.quit()
 
-    print(f"Successfully followed {user}.")
-
-
-
-def upload(driver, path, titre):
-    driver.get("https://www.tiktok.com/creator-center/upload")
-
-    time.sleep(10)
-
-    iframe = WebDriverWait(driver, 50).until(EC.presence_of_element_located((By.TAG_NAME, "iframe")))
-
-    driver.switch_to.frame(iframe)
-    
-    upload_btn = WebDriverWait(driver, 30).until(EC.presence_of_element_located((By.CSS_SELECTOR, 'input[type="file"]')))
-
-    upload_btn.send_keys(path)
-
-    time.sleep(5)
-
-    bot = tiktok_bot(driver)
-    
-    title_box = WebDriverWait(driver, 60).until(EC.element_to_be_clickable((By.XPATH, '//div[@role="combobox"]')))
-
-    title_box.click()
-    
-    title_box.clear()
-    
-    bot.type_text('//div[@role="combobox"]', titre)
-
-    time.sleep(5)
-
-    driver.execute_script("arguments[0].scrollIntoView(true);", driver.find_element(By.XPATH, '//button[@class="css-y1m958"]'))
-    
-    WebDriverWait(driver, 100).until(EC.element_to_be_clickable((By.XPATH, '//button[@class="css-y1m958" and not(@disabled)]')))
-
-    bot.click('//button[@class="css-y1m958"]')
-               
-    print(f"Video titled '{titre}' uploaded successfully from path: {path}")
+# Run the bot
+if __name__ == "__main__":
+    run_bot()
