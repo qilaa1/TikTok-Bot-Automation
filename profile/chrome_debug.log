@@ -1,0 +1,15 @@
+[40344:42384:1211/044747.421:WARNING:codec.cc(386)] Explicitly added H264 constrained baseline to list of supported formats.
+[40344:42384:1211/044747.724:WARNING:codec.cc(386)] Explicitly added H264 constrained baseline to list of supported formats.
+[40344:42384:1211/044749.617:WARNING:codec.cc(386)] Explicitly added H264 constrained baseline to list of supported formats.
+[40344:45588:1211/044749.840:WARNING:stun_port.cc(442)] Port[1441400:0:1:0:host:Net[any:0:0:0:x:x:x:x:x/0:Wildcard:id=0]]: StunPort: stun host lookup received error -1
+[40344:45588:1211/044750.142:WARNING:stun_port.cc(442)] Port[8c2000:0:1:0:host:Net[any:0:0:0:x:x:x:x:x/0:Wildcard:id=0]]: StunPort: stun host lookup received error -1
+[40344:42384:1211/044752.800:WARNING:codec.cc(386)] Explicitly added H264 constrained baseline to list of supported formats.
+[40344:42384:1211/044753.034:WARNING:codec.cc(386)] Explicitly added H264 constrained baseline to list of supported formats.
+[40344:45588:1211/044753.289:WARNING:stun_port.cc(442)] Port[8c2c00:0:1:0:host:Net[any:0:0:0:x:x:x:x:x/0:Wildcard:id=0]]: StunPort: stun host lookup received error -1
+[40344:42384:1211/044758.336:WARNING:codec.cc(386)] Explicitly added H264 constrained baseline to list of supported formats.
+[40344:42384:1211/044759.592:WARNING:codec.cc(386)] Explicitly added H264 constrained baseline to list of supported formats.
+[40344:42384:1211/044800.349:WARNING:codec.cc(386)] Explicitly added H264 constrained baseline to list of supported formats.
+[40344:45588:1211/044800.432:WARNING:stun_port.cc(442)] Port[8c2000:0:1:0:host:Net[any:0:0:0:x:x:x:x:x/0:Wildcard:id=0]]: StunPort: stun host lookup received error -1
+[40344:45588:1211/044800.613:WARNING:stun_port.cc(442)] Port[8c0400:0:1:0:host:Net[any:0:0:0:x:x:x:x:x/0:Wildcard:id=0]]: StunPort: stun host lookup received error -1
+[40344:45588:1211/044814.764:WARNING:webrtc_voice_engine.cc(808)] Attempting to stop aecdump when no audio processing module is present
+[40344:45588:1211/044816.311:WARNING:webrtc_voice_engine.cc(808)] Attempting to stop aecdump when no audio processing module is present
