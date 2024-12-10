@@ -1,5 +1,8 @@
-2024/12/11-04:45:06.277 b374 Reusing MANIFEST F:\TikTok-Bot-Automation\profile\Default\Local Storage\leveldb/MANIFEST-000001
-2024/12/11-04:45:06.286 b374 Recovering log #239
-2024/12/11-04:45:06.288 b374 Level-0 table #241: started
-2024/12/11-04:45:06.295 b374 Level-0 table #241: 38829 bytes OK
-2024/12/11-04:45:06.302 b374 Delete type=0 #239
+2024/12/11-05:11:36.907 b578 Reusing MANIFEST F:\TikTok-Bot-Automation\profile\Default\Local Storage\leveldb/MANIFEST-000001
+2024/12/11-05:11:36.917 b578 Recovering log #252
+2024/12/11-05:11:36.918 b578 Level-0 table #254: started
+2024/12/11-05:11:36.922 b578 Level-0 table #254: 16443 bytes OK
+2024/12/11-05:11:36.923 b578 Recovering log #254
+2024/12/11-05:11:36.926 b578 Reusing old log F:\TikTok-Bot-Automation\profile\Default\Local Storage\leveldb/000254.log 
+2024/12/11-05:11:36.927 b578 Delete type=0 #252
+2024/12/11-05:11:36.928 b578 Delete type=2 #255
